@@ -398,38 +398,52 @@
 
 <script>
 (function() {
-    const MY_APP_PASSWORD = 'rapid743';
+    // === НАСТРОЙКИ ===
+    const MY_APP_PASSWORD = 'rapid743';          // Пароль для входа в приложение
+    const SECRET_TOKEN = 'мой_секретный_токен';  // Токен для доступа к Google Script (должен совпадать с токеном в скрипте)
+    const API_URL = 'https://script.google.com/macros/s/AKfycbwgOimgcfCFRlYItah9XBVf0FzVFeKmdLs_GSowrRBidRDGW-T4QmtPsMa6YYzSh46D/exec'; // ЗАМЕНИТЕ НА СВОЙ URL
 
     const monthNames = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
     let currentYear = '2026';
     let currentMonth = '01';
     let allYearsData = {};
-                const API_URL = 'https://script.google.com/macros/s/AKfycbwgOimgcfCFRlYItah9XBVf0FzVFeKmdLs_GSowrRBidRDGW-T4QmtPsMa6YYzSh46D/exec';
     let dealCostChartInstance = null;
 
+    // === ЗАГРУЗКА ДАННЫХ ===
     async function loadData() {
         try {
-                const response = await fetch(API_URL);            if (stored) {
-                                                    if (stored && stored !== '{}') {
-                allYearsData = JSON.parse(stored);
-            }
+            const response = await fetch(API_URL);
+            if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+            const text = await response.text();
+            allYearsData = text ? JSON.parse(text) : {};
         } catch (e) {
-            console.error('Error loading data', e);
+            console.error('Ошибка загрузки данных:', e);
+            allYearsData = {};
         }
     }
 
+    // === СОХРАНЕНИЕ ДАННЫХ ===
     async function saveData() {
         try {
-                await fetch(API_URL, {
-                                        method: 'POST',
-                        headers: { 'Content-Type': 'text/plain' },
-                                        body: JSON.stringify(allYearsData)
-                    });
-                } catch (e) {
-         async    console.error('Error saving data', e);
+            const payload = {
+                token: SECRET_TOKEN,
+                data: allYearsData
+            };
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+            const result = await response.json();
+            if (!result.success) throw new Error(result.error || 'Неизвестная ошибка');
+        } catch (e) {
+            console.error('Ошибка сохранения данных:', e);
+            alert('Не удалось сохранить данные. Проверьте консоль для деталей.');
         }
     }
 
+    // === ВХОД ПО ПАРОЛЮ ===
     window.onLogin = async function() {
         const inputEl = document.getElementById('accessPassword');
         const error = document.getElementById('passwordError');
@@ -442,13 +456,14 @@
                 scr.style.display = 'none';
                 app.style.display = 'block';
                 error.style.display = 'none';
-           await      initApp();
+                await initApp();
             }
         } else {
             error.style.display = 'block';
         }
     };
 
+    // Обработка Enter в поле пароля
     document.addEventListener('DOMContentLoaded', function() {
         const input = document.getElementById('accessPassword');
         if (input) {
@@ -460,6 +475,34 @@
         }
     });
 
+    // === ИНИЦИАЛИЗАЦИЯ ПРИЛОЖЕНИЯ ===
+    async function initApp() {
+        await loadData();
+        // Если данных нет, создаём пустую структуру для всех лет и месяцев
+        if (Object.keys(allYearsData).length === 0) {
+            for (let year = 2024; year <= 2028; year++) {
+                allYearsData[year] = {};
+                for (let i = 1; i <= 12; i++) {
+                    const month = String(i).padStart(2, '0');
+                    allYearsData[year][month] = [];
+                }
+            }
+        }
+        // Если нет данных за текущий месяц, добавляем 5 пустых строк
+        if (!allYearsData[currentYear]?.[currentMonth] || allYearsData[currentYear][currentMonth].length === 0) {
+            allYearsData[currentYear][currentMonth] = [
+                { name: '', leads: 0, targetLeads: 0, forms: 0, deals: 0, budget: 0, reward: 0 },
+                { name: '', leads: 0, targetLeads: 0, forms: 0, deals: 0, budget: 0, reward: 0 },
+                { name: '', leads: 0, targetLeads: 0, forms: 0, deals: 0, budget: 0, reward: 0 },
+                { name: '', leads: 0, targetLeads: 0, forms: 0, deals: 0, budget: 0, reward: 0 },
+                { name: '', leads: 0, targetLeads: 0, forms: 0, deals: 0, budget: 0, reward: 0 }
+            ];
+            await saveData();
+        }
+        render();
+    }
+
+    // === СМЕНА МЕСЯЦА/ГОДА ===
     window.changeYearMonth = function() {
         const y = document.getElementById('yearSelect');
         const m = document.getElementById('monthSelect');
@@ -469,7 +512,8 @@
         render();
     };
 
-    window.addRow = function() {
+    // === ДОБАВЛЕНИЕ НОВОЙ СТРОКИ ===
+    window.addRow = async function() {
         if (!allYearsData[currentYear][currentMonth]) {
             allYearsData[currentYear][currentMonth] = [];
         }
@@ -481,48 +525,31 @@
         render();
     };
 
-    window.deleteRow = function(index) {
+    // === УДАЛЕНИЕ СТРОКИ ===
+    window.deleteRow = async function(index) {
+        if (!allYearsData[currentYear]?.[currentMonth]) return;
         allYearsData[currentYear][currentMonth].splice(index, 1);
         await saveData();
         render();
     };
 
-    window.updateData = function(index, field, value) {
+    // === ОБНОВЛЕНИЕ ЧИСЛОВЫХ ПОЛЕЙ ===
+    window.updateData = async function(index, field, value) {
+        if (!allYearsData[currentYear]?.[currentMonth]?.[index]) return;
         allYearsData[currentYear][currentMonth][index][field] = parseFloat(value) || 0;
         await saveData();
         render();
     };
 
-    window.updateName = function(index, value) {
+    // === ОБНОВЛЕНИЕ ИМЕНИ ===
+    window.updateName = async function(index, value) {
+        if (!allYearsData[currentYear]?.[currentMonth]?.[index]) return;
         allYearsData[currentYear][currentMonth][index].name = value;
         await saveData();
         render();
     };
 
-    function initApp() {
-        await loadData();
-        if (Object.keys(allYearsData).length === 0) {
-            for (let year = 2024; year <= 2028; year++) {
-    async             allYearsData[year] = {};
-                for (let i = 1; i <= 12; i++) {
-                    const month = String(i).padStart(2, '0');
-                    allYearsData[year][month] = [];
-                }
-            }
-        }
-        const data = allYearsData[currentYear][currentMonth];
-        if (data.length === 0) {
-            for (let i = 0; i < 5; i++) {
-                allYearsData[currentYear][currentMonth].push({
-                    name: '', leads: 0, targetLeads: 0, forms: 0,
-                    deals: 0, budget: 0, reward: 0
-                });
-            }
-            await saveData();
-        }
-        render();
-    }
-
+    // === ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ РАСЧЁТА ===
     function calculateConversion(forms, targetLeads) {
         if (targetLeads === 0) return 0;
         return ((forms / targetLeads) * 100).toFixed(2);
@@ -538,11 +565,12 @@
         return Math.round((budget + reward) / deals);
     }
 
+    // === ОТРИСОВКА ТАБЛИЦЫ ===
     function render() {
         const tbody = document.getElementById('tbody');
         if (!tbody) return;
         tbody.innerHTML = '';
-        const data = allYearsData[currentYear][currentMonth] || [];
+        const data = allYearsData[currentYear]?.[currentMonth] || [];
 
         if (data.length === 0) {
             tbody.innerHTML = '<tr><td colspan="11" style="text-align: center; padding: 40px; color: #999;">Нет данных. Нажмите "Добавить лидогенератор"</td></tr>';
@@ -557,7 +585,7 @@
 
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td><input type="text" value="${row.name}" onchange="updateName(${index}, this.value)" placeholder="Название"></td>
+                <td><input type="text" value="${escapeHtml(row.name)}" onchange="updateName(${index}, this.value)" placeholder="Название"></td>
                 <td><input type="number" value="${row.leads}" onchange="updateData(${index}, 'leads', this.value)" min="0"></td>
                 <td><input type="number" value="${row.targetLeads}" onchange="updateData(${index}, 'targetLeads', this.value)" min="0"></td>
                 <td><input type="number" value="${row.forms}" onchange="updateData(${index}, 'forms', this.value)" min="0"></td>
@@ -575,10 +603,22 @@
         updateStats();
     }
 
+    // Простейшая защита от XSS (экранирование HTML)
+    function escapeHtml(unsafe) {
+        if (!unsafe) return '';
+        return unsafe
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    // === ОБНОВЛЕНИЕ СТАТИСТИКИ ===
     function updateStats() {
         const statsDiv = document.getElementById('stats');
         if (!statsDiv) return;
-        const data = allYearsData[currentYear][currentMonth] || [];
+        const data = allYearsData[currentYear]?.[currentMonth] || [];
         if (data.length === 0) {
             statsDiv.innerHTML = '';
             return;
@@ -621,6 +661,7 @@
         `;
     }
 
+    // === СРАВНЕНИЕ МЕСЯЦЕВ ===
     window.showComparison = function() {
         const modal = document.getElementById('comparisonModal');
         const comparisonDiv = document.getElementById('comparisonContent');
@@ -633,7 +674,7 @@
 
         for (let i = 1; i <= 12; i++) {
             const month = String(i).padStart(2, '0');
-            const data = allYearsData[currentYear][month] || [];
+            const data = allYearsData[currentYear]?.[month] || [];
             if (data.length === 0) continue;
 
             const totalLeads = data.reduce((sum, row) => sum + row.leads, 0);
@@ -683,7 +724,7 @@
             html += '<div class="empty-state">Нет данных для сравнения по лидогенераторам.</div>';
         } else {
             leadgenNames.forEach(name => {
-                html += `<h3 style="margin: 10px 0 5px; color: #667eea; font-size: 18px;">${name}</h3>`;
+                html += `<h3 style="margin: 10px 0 5px; color: #667eea; font-size: 18px;">${escapeHtml(name)}</h3>`;
                 html += '<div class="table-wrapper" style="margin-bottom: 20px;"><table><thead><tr>' +
                     '<th>Месяц</th><th>Лиды</th><th>Сделки</th><th>Бюджет (₽)</th><th>Цена сделки (₽)</th>' +
                     '</tr></thead><tbody>';
@@ -719,6 +760,7 @@
         document.getElementById('comparisonModal').classList.remove('active');
     };
 
+    // === ГРАФИК ЦЕНЫ СДЕЛКИ ===
     window.showChart = function() {
         const chartModal = document.getElementById('chartModal');
         const canvas = document.getElementById('dealCostChart');
@@ -731,7 +773,7 @@
 
         for (let i = 1; i <= 12; i++) {
             const month = String(i).padStart(2, '0');
-            const data = allYearsData[currentYear][month] || [];
+            const data = allYearsData[currentYear]?.[month] || [];
             if (data.length === 0) continue;
 
             const totalLeads = data.reduce((sum, row) => sum + row.leads, 0);
@@ -803,6 +845,7 @@
     window.closeChart = function() {
         document.getElementById('chartModal').classList.remove('active');
     };
+
 })();
 </script>
 </body>
