@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Таблица Лидогенераторов по Месяцам</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 30px;
+        }
+        h1 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 30px;
+            font-size: 28px;
+        }
+        .month-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .month-selector label {
+            font-weight: 600;
+            color: #495057;
+        }
+        select {
+            padding: 10px 15px;
+            border: 2px solid #dee2e6;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            background: white;
+            transition: border-color 0.2s;
+        }
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        .btn-danger {
+            background: #ff6b6b;
+            color: white;
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+        .btn-danger:hover {
+            background: #ff5252;
+        }
+        .btn-compare {
+            background: #ff922b;
+            color: white;
+        }
+        .btn-compare:hover {
+            background: #fd7e14;
+        }
+        .table-wrapper {
+            overflow-x: auto;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+            margin-bottom: 30px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+        thead {
+            background: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+        }
+        th {
+            padding: 12px 10px;
+            text-align: left;
+            font-weight: 600;
+            color: #495057;
+            font-size: 12px;
+            white-space: nowrap;
+            border-right: 1px solid #dee2e6;
+        }
+        th:last-child {
+            border-right: none;
+        }
+        td {
+            padding: 10px;
+            border-right: 1px solid #dee2e6;
+            border-bottom: 1px solid #e9ecef;
+            font-size: 13px;
+        }
+        td:last-child {
+            border-right: none;
+        }
+        tbody tr:hover {
+            background: #f8f9fa;
+        }
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+        input {
+            width: 100%;
+            padding: 6px 10px;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            font-size: 13px;
+            font-family: inherit;
+            transition: border-color 0.2s;
+        }
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        input[type="number"] {
+            text-align: right;
+        }
+        .calculated {
+            background: #f0f4ff;
+            font-weight: 600;
+            color: #667eea;
+            text-align: right;
+        }
+        .delete-btn {
+            text-align: center;
+            width: 60px;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin-top: 30px;
+            padding-top: 30px;
+            border-top: 2px solid #e0e0e0;
+        }
+        .stat-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            border-left: 4px solid #667eea;
+        }
+        .stat-label {
+            font-size: 11px;
+            color: #6c757d;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .stat-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: #667eea;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+        }
+        .comparison-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .comparison-modal.active {
+            display: flex;
+        }
+        .comparison-content {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 900px;
+            max-height: 80vh;
+            overflow-y: auto;
+            width: 90%;
+        }
+        .comparison-content h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+        .close-btn {
+            float: right;
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+        }
+        .close-btn:hover {
+            color: #333;
+        }
+        .text-right {
+            text-align: right;
+        }
+        #passwordScreen {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            margin-top: 20px;
+        }
+        .password-card {
+            max-width: 420px;
+            width: 100%;
+            background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 50%, #1d4ed8 100%);
+            border-radius: 16px;
+            padding: 24px 24px 20px;
+            box-shadow: 0 18px 30px rgba(15,23,42,0.4), 0 0 0 1px rgba(255,255,255,0.12);
+            color: #f9fafb;
+        }
+        .password-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+        .password-subtitle {
+            margin-bottom: 18px;
+            font-size: 14px;
+            color: #e5e7eb;
+            text-align: center;
+        }
+        #passwordScreen input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid rgba(209,213,219,0.9);
+            border-radius: 8px;
+            margin-bottom: 10px;
+            font-size: 14px;
+            background: rgba(15,23,42,0.35);
+            color: #f9fafb;
+        }
+        #passwordScreen input::placeholder { color: #e5e7eb; }
+        #passwordScreen button {
+            width: 100%;
+            padding: 10px 12px;
+            border: none;
+            border-radius: 8px;
+            background: #fbbf24;
+            color: #1f2937;
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 14px;
+            box-shadow: 0 8px 18px rgba(15,23,42,0.4);
+            transition: background 0.2s ease, transform 0.1s ease, box-shadow 0.1s ease;
+        }
+        #passwordScreen button:hover {
+            background: #f59e0b;
+            transform: translateY(-1px);
+            box-shadow: 0 10px 22px rgba(15,23,42,0.45);
+        }
+        #passwordScreen button:active {
+            transform: translateY(0);
+            box-shadow: 0 6px 14px rgba(15,23,42,0.35);
+        }
+        #passwordError {
+            display: none;
+            color: #fee2e2;
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Таблица Лидогенераторов по Месяцам</h1>
+
+    <!-- Экран пароля -->
+    <div id="passwordScreen">
+        <div class="password-card">
+            <div class="password-title">Доступ к аналитике</div>
+            <p class="password-subtitle">Введите пароль, чтобы открыть таблицу лидогенераторов.</p>
+            <input type="password" id="accessPassword" placeholder="Пароль">
+            <div id="passwordError">Неверный пароль</div>
+            <button id="passwordBtn" onclick="onLogin()">Войти</button>
+        </div>
+    </div>
+
+    <!-- Основное приложение -->
+    <div id="appBlock" style="display:none;">
+        <div class="month-selector">
+            <label for="yearSelect">Выберите год:</label>
+            <select id="yearSelect" onchange="changeYearMonth()">
+                <option value="2024">2024</option>
+                <option value="2025">2025</option>
+                <option value="2026" selected>2026</option>
+                <option value="2027">2027</option>
+                <option value="2028">2028</option>
+            </select>
+            <label for="monthSelect" style="margin-left: 20px;">Выберите месяц:</label>
+            <select id="monthSelect" onchange="changeYearMonth()">
+                <option value="01">Январь</option>
+                <option value="02">Февраль</option>
+                <option value="03">Март</option>
+                <option value="04">Апрель</option>
+                <option value="05">Май</option>
+                <option value="06">Июнь</option>
+                <option value="07">Июль</option>
+                <option value="08">Август</option>
+                <option value="09">Сентябрь</option>
+                <option value="10">Октябрь</option>
+                <option value="11">Ноябрь</option>
+                <option value="12">Декабрь</option>
+            </select>
+        </div>
+
+        <div class="controls">
+            <button class="btn-primary" onclick="addRow()">+ Добавить лидогенератор</button>
+            <button class="btn-compare" onclick="showComparison()">Сравнить месяцы</button>
+            <button class="btn-compare" onclick="showChart()">График цены сделки</button>
+        </div>
+
+        <div class="table-wrapper">
+            <table id="table">
+                <thead>
+                    <tr>
+                        <th>Лидогенератор</th>
+                        <th>Лиды</th>
+                        <th>Целевые<br>лиды</th>
+                        <th>Получено<br>анкет/встреч</th>
+                        <th>Конверсия<br>в анкеты (%)</th>
+                        <th>Сделок</th>
+                        <th>Конверсия<br>в сделки (%)</th>
+                        <th>Рекламный<br>бюджет (₽)</th>
+                        <th>Вознаграждение<br>маркетолога (₽)</th>
+                        <th>Цена одной<br>сделки (₽)</th>
+                        <th style="width: 60px;">Действие</th>
+                    </tr>
+                </thead>
+                <tbody id="tbody"></tbody>
+            </table>
+        </div>
+
+        <div class="stats" id="stats"></div>
+    </div>
+</div>
+
+<!-- Модалка сравнения месяцев -->
+<div id="comparisonModal" class="comparison-modal">
+    <div class="comparison-content">
+        <span class="close-btn" onclick="closeComparison()">&times;</span>
+        <h2>Сравнение месяцев</h2>
+        <div id="comparisonContent"></div>
+    </div>
+</div>
+
+<!-- Модалка с графиком -->
+<div id="chartModal" class="comparison-modal">
+    <div class="comparison-content" style="height: 500px;">
+        <span class="close-btn" onclick="closeChart()">&times;</span>
+        <h2>График стоимости сделки по месяцам</h2>
+        <div style="height: 420px;">
+            <canvas id="dealCostChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+(function() {
+    const MY_APP_PASSWORD = 'rapid743';
+    const STORAGE_KEY = 'leadGenTableData';
+    const monthNames = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+    let currentYear = '2026';
+    let currentMonth = '01';
+    let allYearsData = {};
+    let dealCostChartInstance = null;
+
+    function loadData() {
+        try {
+            const stored = localStorage.getItem(STORAGE_KEY);
+            if (stored) {
+                allYearsData = JSON.parse(stored);
+            }
+        } catch (e) {
+            console.error('Error loading data', e);
+        }
+    }
+
+    function saveData() {
+        try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(allYearsData));
+        } catch (e) {
+            console.error('Error saving data', e);
+        }
+    }
+
+    window.onLogin = function() {
+        const inputEl = document.getElementById('accessPassword');
+        const error = document.getElementById('passwordError');
+        if (!inputEl || !error) return;
+        const val = inputEl.value.trim();
+        if (val === MY_APP_PASSWORD) {
+            const scr = document.getElementById('passwordScreen');
+            const app = document.getElementById('appBlock');
+            if (scr && app) {
+                scr.style.display = 'none';
+                app.style.display = 'block';
+                error.style.display = 'none';
+                initApp();
+            }
+        } else {
+            error.style.display = 'block';
+        }
+    };
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const input = document.getElementById('accessPassword');
+        if (input) {
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    window.onLogin();
+                }
+            });
+        }
+    });
+
+    window.changeYearMonth = function() {
+        const y = document.getElementById('yearSelect');
+        const m = document.getElementById('monthSelect');
+        if (!y || !m) return;
+        currentYear = y.value;
+        currentMonth = m.value;
+        render();
+    };
+
+    window.addRow = function() {
+        if (!allYearsData[currentYear][currentMonth]) {
+            allYearsData[currentYear][currentMonth] = [];
+        }
+        allYearsData[currentYear][currentMonth].push({
+            name: '', leads: 0, targetLeads: 0, forms: 0,
+            deals: 0, budget: 0, reward: 0
+        });
+        saveData();
+        render();
+    };
+
+    window.deleteRow = function(index) {
+        allYearsData[currentYear][currentMonth].splice(index, 1);
+        saveData();
+        render();
+    };
+
+    window.updateData = function(index, field, value) {
+        allYearsData[currentYear][currentMonth][index][field] = parseFloat(value) || 0;
+        saveData();
+        render();
+    };
+
+    window.updateName = function(index, value) {
+        allYearsData[currentYear][currentMonth][index].name = value;
+        saveData();
+        render();
+    };
+
+    function initApp() {
+        loadData();
+        if (Object.keys(allYearsData).length === 0) {
+            for (let year = 2024; year <= 2028; year++) {
+                allYearsData[year] = {};
+                for (let i = 1; i <= 12; i++) {
+                    const month = String(i).padStart(2, '0');
+                    allYearsData[year][month] = [];
+                }
+            }
+        }
+        const data = allYearsData[currentYear][currentMonth];
+        if (data.length === 0) {
+            for (let i = 0; i < 5; i++) {
+                allYearsData[currentYear][currentMonth].push({
+                    name: '', leads: 0, targetLeads: 0, forms: 0,
+                    deals: 0, budget: 0, reward: 0
+                });
+            }
+            saveData();
+        }
+        render();
+    }
+
+    function calculateConversion(forms, targetLeads) {
+        if (targetLeads === 0) return 0;
+        return ((forms / targetLeads) * 100).toFixed(2);
+    }
+
+    function calculateDealConversion(deals, forms) {
+        if (forms === 0) return 0;
+        return ((deals / forms) * 100).toFixed(2);
+    }
+
+    function calculateCostPerDeal(budget, reward, deals) {
+        if (deals === 0) return 0;
+        return Math.round((budget + reward) / deals);
+    }
+
+    function render() {
+        const tbody = document.getElementById('tbody');
+        if (!tbody) return;
+        tbody.innerHTML = '';
+        const data = allYearsData[currentYear][currentMonth] || [];
+
+        if (data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="11" style="text-align: center; padding: 40px; color: #999;">Нет данных. Нажмите "Добавить лидогенератор"</td></tr>';
+            updateStats();
+            return;
+        }
+
+        data.forEach((row, index) => {
+            const conversion1 = calculateConversion(row.forms, row.targetLeads);
+            const conversion2 = calculateDealConversion(row.deals, row.forms);
+            const costPerDeal = calculateCostPerDeal(row.budget, row.reward, row.deals);
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><input type="text" value="${row.name}" onchange="updateName(${index}, this.value)" placeholder="Название"></td>
+                <td><input type="number" value="${row.leads}" onchange="updateData(${index}, 'leads', this.value)" min="0"></td>
+                <td><input type="number" value="${row.targetLeads}" onchange="updateData(${index}, 'targetLeads', this.value)" min="0"></td>
+                <td><input type="number" value="${row.forms}" onchange="updateData(${index}, 'forms', this.value)" min="0"></td>
+                <td class="calculated">${conversion1}%</td>
+                <td><input type="number" value="${row.deals}" onchange="updateData(${index}, 'deals', this.value)" min="0"></td>
+                <td class="calculated">${conversion2}%</td>
+                <td><input type="number" value="${row.budget}" onchange="updateData(${index}, 'budget', this.value)" min="0"></td>
+                <td><input type="number" value="${row.reward}" onchange="updateData(${index}, 'reward', this.value)" min="0"></td>
+                <td class="calculated">${costPerDeal.toLocaleString('ru-RU')}</td>
+                <td class="delete-btn"><button class="btn-danger" onclick="deleteRow(${index})">✕</button></td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        updateStats();
+    }
+
+    function updateStats() {
+        const statsDiv = document.getElementById('stats');
+        if (!statsDiv) return;
+        const data = allYearsData[currentYear][currentMonth] || [];
+        if (data.length === 0) {
+            statsDiv.innerHTML = '';
+            return;
+        }
+
+        const totalLeads = data.reduce((sum, row) => sum + row.leads, 0);
+        const totalDeals = data.reduce((sum, row) => sum + row.deals, 0);
+        const totalBudget = data.reduce((sum, row) => sum + row.budget + row.reward, 0);
+        const avgCostPerDeal = totalDeals === 0 ? 0 : Math.round(totalBudget / totalDeals);
+        const totalForms = data.reduce((sum, row) => sum + row.forms, 0);
+        const totalTargetLeads = data.reduce((sum, row) => sum + row.targetLeads, 0);
+        const overallConversion1 = totalTargetLeads === 0 ? 0 : ((totalForms / totalTargetLeads) * 100).toFixed(2);
+        const overallConversion2 = totalForms === 0 ? 0 : ((totalDeals / totalForms) * 100).toFixed(2);
+
+        statsDiv.innerHTML = `
+            <div class="stat-card">
+                <div class="stat-label">Всего лидов</div>
+                <div class="stat-value">${totalLeads.toLocaleString('ru-RU')}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Конверсия в анкеты</div>
+                <div class="stat-value">${overallConversion1}%</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Конверсия в сделки</div>
+                <div class="stat-value">${overallConversion2}%</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Всего сделок</div>
+                <div class="stat-value">${totalDeals}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Всего потрачено (₽)</div>
+                <div class="stat-value">${totalBudget.toLocaleString('ru-RU')}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Средняя цена сделки (₽)</div>
+                <div class="stat-value">${avgCostPerDeal.toLocaleString('ru-RU')}</div>
+            </div>
+        `;
+    }
+
+    window.showComparison = function() {
+        const modal = document.getElementById('comparisonModal');
+        const comparisonDiv = document.getElementById('comparisonContent');
+        comparisonDiv.innerHTML = '';
+
+        const leadgenStats = {};
+        let html = '<div class="table-wrapper" style="margin-bottom: 30px;"><table><thead><tr>' +
+            '<th>Месяц</th><th>Всего лидов</th><th>Сделок</th><th>Бюджет (₽)</th><th>Цена сделки (₽)</th>' +
+            '</tr></thead><tbody>';
+
+        for (let i = 1; i <= 12; i++) {
+            const month = String(i).padStart(2, '0');
+            const data = allYearsData[currentYear][month] || [];
+            if (data.length === 0) continue;
+
+            const totalLeads = data.reduce((sum, row) => sum + row.leads, 0);
+            const totalDeals = data.reduce((sum, row) => sum + row.deals, 0);
+            const totalBudget = data.reduce((sum, row) => sum + row.budget + row.reward, 0);
+            const avgCostPerDeal = totalDeals === 0 ? 0 : Math.round(totalBudget / totalDeals);
+
+            html += `<tr>
+                <td>${monthNames[i-1]} ${currentYear}</td>
+                <td class="text-right">${totalLeads.toLocaleString('ru-RU')}</td>
+                <td class="text-right">${totalDeals}</td>
+                <td class="text-right">${totalBudget.toLocaleString('ru-RU')}</td>
+                <td class="text-right">${avgCostPerDeal.toLocaleString('ru-RU')}</td>
+            </tr>`;
+
+            data.forEach(row => {
+                const name = row.name || 'Без названия';
+                if (!leadgenStats[name]) {
+                    leadgenStats[name] = {};
+                }
+                if (!leadgenStats[name][month]) {
+                    leadgenStats[name][month] = { leads: 0, deals: 0, budget: 0, reward: 0 };
+                }
+                leadgenStats[name][month].leads += row.leads;
+                leadgenStats[name][month].deals += row.deals;
+                leadgenStats[name][month].budget += row.budget;
+                leadgenStats[name][month].reward += row.reward;
+            });
+        }
+
+        html += '</tbody></table></div>';
+
+        let leadgenNames = Object.keys(leadgenStats);
+        leadgenNames = leadgenNames.filter(name => {
+            const months = leadgenStats[name];
+            let sumLeads = 0, sumDeals = 0, sumBudget = 0, sumReward = 0;
+            Object.values(months).forEach(m => {
+                sumLeads += m.leads;
+                sumDeals += m.deals;
+                sumBudget += m.budget;
+                sumReward += m.reward;
+            });
+            return sumLeads > 0 || sumDeals > 0 || sumBudget > 0 || sumReward > 0;
+        });
+
+        if (leadgenNames.length === 0) {
+            html += '<div class="empty-state">Нет данных для сравнения по лидогенераторам.</div>';
+        } else {
+            leadgenNames.forEach(name => {
+                html += `<h3 style="margin: 10px 0 5px; color: #667eea; font-size: 18px;">${name}</h3>`;
+                html += '<div class="table-wrapper" style="margin-bottom: 20px;"><table><thead><tr>' +
+                    '<th>Месяц</th><th>Лиды</th><th>Сделки</th><th>Бюджет (₽)</th><th>Цена сделки (₽)</th>' +
+                    '</tr></thead><tbody>';
+
+                for (let i = 1; i <= 12; i++) {
+                    const month = String(i).padStart(2, '0');
+                    const monthData = leadgenStats[name][month];
+                    if (!monthData) continue;
+
+                    const totalLeads = monthData.leads;
+                    const totalDeals = monthData.deals;
+                    const totalBudget = monthData.budget + monthData.reward;
+                    const costPerDeal = totalDeals === 0 ? 0 : Math.round(totalBudget / totalDeals);
+
+                    html += `<tr>
+                        <td>${monthNames[i-1]} ${currentYear}</td>
+                        <td class="text-right">${totalLeads.toLocaleString('ru-RU')}</td>
+                        <td class="text-right">${totalDeals}</td>
+                        <td class="text-right">${totalBudget.toLocaleString('ru-RU')}</td>
+                        <td class="text-right">${costPerDeal.toLocaleString('ru-RU')}</td>
+                    </tr>`;
+                }
+
+                html += '</tbody></table></div>';
+            });
+        }
+
+        comparisonDiv.innerHTML = html;
+        modal.classList.add('active');
+    };
+
+    window.closeComparison = function() {
+        document.getElementById('comparisonModal').classList.remove('active');
+    };
+
+    window.showChart = function() {
+        const chartModal = document.getElementById('chartModal');
+        const canvas = document.getElementById('dealCostChart');
+        if (!chartModal || !canvas) return;
+        const ctx = canvas.getContext('2d');
+
+        const labels = [];
+        const costData = [];
+        const tooltipInfo = [];
+
+        for (let i = 1; i <= 12; i++) {
+            const month = String(i).padStart(2, '0');
+            const data = allYearsData[currentYear][month] || [];
+            if (data.length === 0) continue;
+
+            const totalLeads = data.reduce((sum, row) => sum + row.leads, 0);
+            const totalDeals = data.reduce((sum, row) => sum + row.deals, 0);
+            const totalBudget = data.reduce((sum, row) => sum + row.budget + row.reward, 0);
+            const avgCostPerDeal = totalDeals === 0 ? 0 : Math.round(totalBudget / totalDeals);
+
+            labels.push(monthNames[i - 1]);
+            costData.push(avgCostPerDeal);
+            tooltipInfo.push({
+                monthLabel: `${monthNames[i - 1]} ${currentYear}`,
+                totalLeads,
+                totalDeals,
+                totalBudget,
+                avgCostPerDeal
+            });
+        }
+
+        if (dealCostChartInstance) {
+            dealCostChartInstance.destroy();
+        }
+
+        dealCostChartInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Средняя цена сделки, ₽',
+                    data: costData,
+                    borderColor: '#667eea',
+                    backgroundColor: 'rgba(102, 126, 234, 0.2)',
+                    tension: 0.3,
+                    pointRadius: 5,
+                    pointHoverRadius: 7
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const idx = context.dataIndex;
+                                const info = tooltipInfo[idx];
+                                if (!info) return '';
+                                return [
+                                    info.monthLabel,
+                                    `Средняя цена сделки: ${info.avgCostPerDeal.toLocaleString('ru-RU')} ₽`,
+                                    `Лидов: ${info.totalLeads.toLocaleString('ru-RU')}`,
+                                    `Сделок: ${info.totalDeals}`,
+                                    `Бюджет+вознаграждение: ${info.totalBudget.toLocaleString('ru-RU')} ₽`
+                                ];
+                            }
+                        }
+                    },
+                    legend: { display: true }
+                },
+                scales: {
+                    y: { title: { display: true, text: 'Цена сделки, ₽' } },
+                    x: { title: { display: true, text: 'Месяц' } }
+                }
+            }
+        });
+
+        chartModal.classList.add('active');
+    };
+
+    window.closeChart = function() {
+        document.getElementById('chartModal').classList.remove('active');
+    };
+})();
+</script>
+</body>
+</html>
