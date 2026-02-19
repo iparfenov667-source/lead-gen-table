@@ -404,12 +404,13 @@
     let currentYear = '2026';
     let currentMonth = '01';
     let allYearsData = {};
+                const API_URL = 'https://script.google.com/macros/s/AKfycbwgOimgcfCFRlYItah9XBVf0FzVFeKmdLs_GSowrRBidRDGW-T4QmtPsMa6YYzSh46D/exec';
     let dealCostChartInstance = null;
 
-    function loadData() {
+    functasync ion loadData() {
         try {
-            const stored = localStorage.getItem(STORAGE_KEY);
-            if (stored) {
+                const response = await fetch(API_URL);            if (stored) {
+                                                    if (stored && stored !== '{}') {
                 allYearsData = JSON.parse(stored);
             }
         } catch (e) {
@@ -417,15 +418,19 @@
         }
     }
 
-    function saveData() {
+    function await saveData() {
         try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(allYearsData));
-        } catch (e) {
-            console.error('Error saving data', e);
+                await fetch(API_URL, {
+                                        method: 'POST',
+                        headers: { 'Content-Type': 'text/plain' },
+                                        body: JSON.stringify(allYearsData)
+                    });
+                } catch (e) {
+         async    console.error('Error saving data', e);
         }
     }
 
-    window.onLogin = function() {
+    window.onLogin = async function() {
         const inputEl = document.getElementById('accessPassword');
         const error = document.getElementById('passwordError');
         if (!inputEl || !error) return;
@@ -437,7 +442,7 @@
                 scr.style.display = 'none';
                 app.style.display = 'block';
                 error.style.display = 'none';
-                initApp();
+           await      initApp();
             }
         } else {
             error.style.display = 'block';
@@ -472,33 +477,33 @@
             name: '', leads: 0, targetLeads: 0, forms: 0,
             deals: 0, budget: 0, reward: 0
         });
-        saveData();
+        await saveData();
         render();
     };
 
-    window.deleteRow = function(index) {
+    windawait ow.deleteRow = function(index) {
         allYearsData[currentYear][currentMonth].splice(index, 1);
-        saveData();
+        await saveData();
         render();
     };
 
     window.updateData = function(index, field, value) {
         allYearsData[currentYear][currentMonth][index][field] = parseFloat(value) || 0;
-        saveData();
+        await saveData();
         render();
     };
 
     window.updateName = function(index, value) {
         allYearsData[currentYear][currentMonth][index].name = value;
-        saveData();
+        await saveData();
         render();
     };
 
     function initApp() {
-        loadData();
+        await loadData();
         if (Object.keys(allYearsData).length === 0) {
             for (let year = 2024; year <= 2028; year++) {
-                allYearsData[year] = {};
+    async             allYearsData[year] = {};
                 for (let i = 1; i <= 12; i++) {
                     const month = String(i).padStart(2, '0');
                     allYearsData[year][month] = [];
@@ -513,7 +518,7 @@
                     deals: 0, budget: 0, reward: 0
                 });
             }
-            saveData();
+            await saveData();
         }
         render();
     }
