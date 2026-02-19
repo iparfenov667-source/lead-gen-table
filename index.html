@@ -399,7 +399,7 @@
 <script>
 (function() {
     const MY_APP_PASSWORD = 'rapid743';
-    const STORAGE_KEY = 'leadGenTableData';
+
     const monthNames = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
     let currentYear = '2026';
     let currentMonth = '01';
@@ -407,7 +407,7 @@
                 const API_URL = 'https://script.google.com/macros/s/AKfycbwgOimgcfCFRlYItah9XBVf0FzVFeKmdLs_GSowrRBidRDGW-T4QmtPsMa6YYzSh46D/exec';
     let dealCostChartInstance = null;
 
-    functasync ion loadData() {
+    async function loadData() {
         try {
                 const response = await fetch(API_URL);            if (stored) {
                                                     if (stored && stored !== '{}') {
@@ -418,7 +418,7 @@
         }
     }
 
-    function await saveData() {
+    async function saveData() {
         try {
                 await fetch(API_URL, {
                                         method: 'POST',
@@ -481,7 +481,7 @@
         render();
     };
 
-    windawait ow.deleteRow = function(index) {
+    window.deleteRow = function(index) {
         allYearsData[currentYear][currentMonth].splice(index, 1);
         await saveData();
         render();
