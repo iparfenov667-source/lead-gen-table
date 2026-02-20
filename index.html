@@ -5,7 +5,7 @@
     <title>Таблица Лидогенераторов по Месяцам</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        /* все стили остаются без изменений */
+        /* все стили остаются без изменений, добавлен новый класс .btn-warning */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
@@ -91,6 +91,16 @@
         }
         .btn-compare:hover {
             background: #fd7e14;
+        }
+        /* Новая кнопка для активации прокси */
+        .btn-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+        .btn-warning:hover {
+            background: #e0a800;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 193, 7, 0.4);
         }
         .table-wrapper {
             overflow-x: auto;
@@ -348,6 +358,8 @@
             <button class="btn-primary" onclick="addRow()">+ Добавить лидогенератор</button>
             <button class="btn-compare" onclick="showComparison()">Сравнить месяцы</button>
             <button class="btn-compare" onclick="showChart()">График цены сделки</button>
+            <!-- Новая кнопка для активации прокси -->
+            <button class="btn-warning" onclick="window.open('https://cors-anywhere.herokuapp.com/', '_blank')">⚠️ Активировать приложение</button>
         </div>
 
         <div class="table-wrapper">
